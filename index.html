@@ -33,7 +33,7 @@
                 video.srcObject = stream;
                 video.play();
 
-                const barcodeDetector = new BarcodeDetector({ formats: ['code_128'] });
+                const barcodeDetector = new BarcodeDetector({ formats: ['ALL_FORMATS'] });
 
                 setInterval(async () => {
                     const barcodes = await barcodeDetector.detect(video);
