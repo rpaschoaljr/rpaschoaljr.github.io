@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Leitor de Código de Barras</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        video {
+            width: 320px;
+            height: 240px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Leitor de Código de Barras</h1>
+        <video id="video" autoplay></video>
+        <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const barcodeValue = document.getElementById('barcode-value');
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.play();
+
+                const barcodeDetector = new BarcodeDetector({ formats: ['code_128'] });
+
+                setInterval(async () => {
+                    const barcodes = await barcodeDetector.detect(video);
+                    if (barcodes.length > 0) {
+                        barcodeValue.value = barcodes[0].rawValue;
+                    }
+                }, 100);
+            })
+            .catch(err => console.error('Erro ao acessar a câmera:', err));
+    </script>
+</body>
+
+</html>
