@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-
 <head>
-
     <title>Leitor de Código de Barras</title>
     <style>
         .container {
@@ -36,11 +34,14 @@
         <h1>Leitor de Código de Barras</h1>
         <video id="video" autoplay></video>
         <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
-        <canvas id="canvas" width="600" height="400"></canvas>
+        <canvas id="canvas" width="320" height="240"></canvas>
     </div>
+
+    <!-- Bibliotecas Externas -->
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.6.20/dist/dbr.js"></script>
     <script type="text/javascript" src="https://unpkg.com/@zxing/browser@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/barcode-detection@latest/dist/barcode-detector.umd.js"></script>
+
     <script>
         const video = document.getElementById('video');
         const barcodeValue = document.getElementById('barcode-value');
@@ -51,7 +52,7 @@
         let animationId;
 
         if ('BarcodeDetector' in window) {
-            barcodeDetector = new BarcodeDetector(); // Lê todos os formatos
+            barcodeDetector = new BarcodeDetector();
         } else {
             barcodeValue.value = "API BarcodeDetector não suportada neste navegador.";
         }
@@ -71,7 +72,6 @@
                                 const barcode = barcodes[0];
                                 barcodeValue.value = barcode.rawValue;
 
-                                // Desenha o retângulo ao redor do código de barras
                                 const boundingBox = barcode.boundingBox;
                                 ctx.strokeStyle = 'red';
                                 ctx.lineWidth = 2;
@@ -83,7 +83,7 @@
                         .catch(err => {
                             console.error('Erro na detecção de código de barras:', err);
                             barcodeValue.value = "Erro na leitura do código de barras";
-                            animationId = requestAnimationFrame(detectBarcode); // Continua tentando
+                            animationId = requestAnimationFrame(detectBarcode);
                         });
                 }
 
