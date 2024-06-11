@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>zxing</title>
+    <title>BarCode</title>
     <style>
         .container {
             display: flex;
@@ -37,7 +37,10 @@
         <canvas id="canvas" width="320" height="240"></canvas>
     </div>
 
-    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+    <!-- Bibliotecas Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.6.20/dist/dbr.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/@zxing/browser@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/barcode-detection@latest/dist/barcode-detector.umd.js"></script>
 
     <script>
         const video = document.getElementById('video');
@@ -45,35 +48,42 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        let codeReader;
+        let barcodeDetector;
+        let animationId;
+
+        if ('BarcodeDetector' in window) {
+            barcodeDetector = new BarcodeDetector();
+        } else {
+            barcodeValue.value = "API BarcodeDetector não suportada neste navegador.";
+        }
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(stream => {
                 video.srcObject = stream;
 
-                codeReader = new ZXing.BrowserMultiFormatReader();
-
                 function detectBarcode() {
-                    codeReader.decodeFromVideoElement(video, canvas)
-                        .then(result => {
-                            if (result) {
-                                barcodeValue.value = result.text;
+                    if (!barcodeDetector) return;
 
-                                // Desenhar o retângulo ao redor do código de barras
-                                const bounds = result.resultPoints;
+                    barcodeDetector.detect(video)
+                        .then(barcodes => {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                            if (barcodes.length > 0) {
+                                const barcode = barcodes[0];
+                                barcodeValue.value = barcode.rawValue;
+
+                                const boundingBox = barcode.boundingBox;
                                 ctx.strokeStyle = 'red';
                                 ctx.lineWidth = 2;
-                                ctx.strokeRect(bounds[0].x, bounds[0].y, bounds[2].x - bounds[0].x, bounds[3].y - bounds[0].y);
-                            } else {
-                                barcodeValue.value = "";
+                                ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
                             }
+
+                            animationId = requestAnimationFrame(detectBarcode);
                         })
                         .catch(err => {
-                            console.error('Erro na leitura:', err);
+                            console.error('Erro na detecção de código de barras:', err);
                             barcodeValue.value = "Erro na leitura do código de barras";
-                        })
-                        .finally(() => {
-                            requestAnimationFrame(detectBarcode);
+                            animationId = requestAnimationFrame(detectBarcode);
                         });
                 }
 
