@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Barcode</title>
+    <title>QuaggaJS</title>
     <style>
         .container {
             display: flex;
@@ -11,7 +11,8 @@
         }
 
         video {
-            max-width: 100%;
+            width: 320px;
+            height: 240px;
             border: 2px solid #ccc;
         }
 
@@ -21,7 +22,7 @@
             border: 1px solid #ccc;
         }
 
-        .barcode-highlight {
+        .drawingBuffer {
             position: absolute;
             border: 2px solid red;
         }
@@ -33,72 +34,73 @@
         <h1>Leitor de Código de Barras</h1>
         <video id="video" autoplay></video>
         <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
-        <canvas id="canvas"></canvas>
     </div>
 
-    <!-- Bibliotecas Externas -->
-    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.6.20/dist/dbr.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/barcode-detection@latest/dist/barcode-detector.umd.js"></script>
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
 
     <script>
         const video = document.getElementById('video');
         const barcodeValue = document.getElementById('barcode-value');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        let permissionRequested = false;
 
-        let barcodeDetector;
-        let animationId;
+        async function startScanner() {
+            if (!permissionRequested) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    video.srcObject = stream;
+                    permissionRequested = true;
 
-        if ('BarcodeDetector' in window) {
-            barcodeDetector = new BarcodeDetector();
-        } else {
-            barcodeValue.value = "API BarcodeDetector não suportada neste navegador.";
+                    Quagga.init({
+                        // inputStream removido aqui
+                        decoder: {
+                            readers: ["ean_reader", "code_128_reader", "code_39_reader", "ean_8_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+                        }
+                    }, (err) => {
+                        if (err) {
+                            console.error("Erro ao iniciar o Quagga:", err);
+                            return;
+                        }
+                        Quagga.start();
+                    });
+
+                    Quagga.onDetected(result => {
+                        barcodeValue.value = result.codeResult.code;
+
+                        const drawingCtx = Quagga.canvas.ctx.overlay;
+                        const drawingCanvas = Quagga.canvas.dom.overlay;
+                        drawingCanvas.classList.add("drawingBuffer");
+                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                        if (result) {
+                            Quagga.ImageDebug.drawPath(result.boxes, { x: 0, y: 1 }, drawingCtx, { color: "red", lineWidth: 2 });
+                        }
+                    });
+
+                } catch (err) {
+                    console.error('Erro ao acessar a câmera:', err);
+                    if (err.name === 'NotAllowedError') {
+                        barcodeValue.value = "Permissão de acesso à câmera negada.";
+                    }
+                }
+            }
         }
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => {
-                video.srcObject = stream;
+        startScanner();
 
-                function detectBarcode() {
-                    if (!barcodeDetector) return;
-
-                    barcodeDetector.detect(video)
-                        .then(barcodes => {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                            if (barcodes.length > 0) {
-                                const barcode = barcodes[0];
-                                barcodeValue.value = barcode.rawValue;
-
-                                const boundingBox = barcode.boundingBox;
-                                ctx.strokeStyle = 'red';
-                                ctx.lineWidth = 2;
-                                ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
-                            }
-
-                            animationId = requestAnimationFrame(detectBarcode);
-                        })
-                        .catch(err => {
-                            console.error('Erro na detecção de código de barras:', err);
-                            barcodeValue.value = "Erro na leitura do código de barras";
-                            animationId = requestAnimationFrame(detectBarcode);
-                        });
-                }
-
-                video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    detectBarcode();
-                };
-            })
-            .catch(err => {
-                console.error('Erro ao acessar a câmera:', err);
-                if (err.name === 'NotAllowedError') {
-                    barcodeValue.value = "Permissão de acesso à câmera negada.";
-                } else {
-                    barcodeValue.value = "Erro ao acessar a câmera.";
-                }
-            });
+        setInterval(() => {
+            if (permissionRequested) {
+                Quagga.decodeSingle({
+                    // inputStream removido aqui
+                    decoder: {
+                        readers: ["ean_reader", "code_128_reader", "code_39_reader", "ean_8_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+                    },
+                    target: video // Passa o elemento de vídeo diretamente
+                }, (result) => {
+                    if (result) {
+                        barcodeValue.value = result.codeResult.code;
+                    }
+                });
+            }
+        }, 1000); 
     </script>
 </body>
 
