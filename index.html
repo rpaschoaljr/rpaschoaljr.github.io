@@ -38,9 +38,7 @@
     </div>
 
     <!-- Bibliotecas Externas -->
-    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-javascript-barcode@9.6.20/dist/dbr.js"></script>
-    <script type="text/javascript" src="https://unpkg.com/@zxing/browser@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/barcode-detection@latest/dist/barcode-detector.umd.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
 
     <script>
         const video = document.getElementById('video');
@@ -48,57 +46,57 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        let barcodeDetector;
-        let animationId;
+        let codeReader;
+        let intervalId;
 
-        if ('BarcodeDetector' in window) {
-            barcodeDetector = new BarcodeDetector();
-        } else {
-            barcodeValue.value = "API BarcodeDetector não suportada neste navegador.";
-        }
+        const ZXing = window.ZXing; // Certifique-se de que o ZXing está carregado
+
+        codeReader = new ZXing.BrowserMultiFormatReader();
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(stream => {
                 video.srcObject = stream;
-
-                function detectBarcode() {
-                    if (!barcodeDetector) return;
-
-                    barcodeDetector.detect(video)
-                        .then(barcodes => {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                            if (barcodes.length > 0) {
-                                const barcode = barcodes[0];
-                                barcodeValue.value = barcode.rawValue;
-
-                                const boundingBox = barcode.boundingBox;
-                                ctx.strokeStyle = 'red';
-                                ctx.lineWidth = 2;
-                                ctx.strokeRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
-                            }
-
-                            animationId = requestAnimationFrame(detectBarcode);
-                        })
-                        .catch(err => {
-                            console.error('Erro na detecção de código de barras:', err);
-                            barcodeValue.value = "Erro na leitura do código de barras";
-                            animationId = requestAnimationFrame(detectBarcode);
-                        });
-                }
-
                 video.onloadedmetadata = () => {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
-                    detectBarcode();
+                    decodeBarcode();
                 };
             })
             .catch(err => {
-                console.error('Erro ao acessar a câmera:', err);
-                if (err.name === 'NotAllowedError') {
-                    barcodeValue.value = "Permissão de acesso à câmera negada.";
-                }
+                console.error('Erro:', err);
+                barcodeValue.value = "Erro ao acessar a câmera.";
             });
+
+        function decodeBarcode() {
+            if (!codeReader) return;
+
+            codeReader.decodeFromVideoElement(video, canvas)
+                .then(result => {
+                    if (result) {
+                        barcodeValue.value = result.text;
+                        // Desenhar retângulo ao redor do código de barras (opcional)
+                        drawResultPoints(result);
+                    }
+                })
+                .catch(err => {
+                    console.error('Erro na leitura do código de barras:', err);
+                })
+                .finally(() => {
+                    intervalId = setTimeout(decodeBarcode, 500); // Executar a cada 500ms
+                });
+        }
+
+        function drawResultPoints(result) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < result.resultPoints.length; i++) {
+                const point = result.resultPoints[i];
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        }
     </script>
 </body>
 
