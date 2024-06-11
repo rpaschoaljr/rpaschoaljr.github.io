@@ -2,7 +2,10 @@
 <html>
 
 <head>
-    <title>Leitor de Código de Barras</title>
+    <title>Leitor de Código de Barras (Câmera e Zebra)</title>
+
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
     <style>
         .container {
             display: flex;
@@ -10,100 +13,80 @@
             align-items: center;
         }
 
-        video {
-            width: 320px;
-            height: 240px;
+        #interactive.viewport {
+            /* Estilos para a área de visualização da câmera */
+            width: 480px;
+            height: 320px;
             border: 2px solid #ccc;
         }
 
-        #barcode-value {
-            margin-top: 10px;
+        input[type="text"] {
+            margin: 10px 0;
             padding: 8px;
             border: 1px solid #ccc;
-        }
-
-        .barcode-highlight {
-            position: absolute;
-            border: 2px solid red;
+            width: 300px;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Leitor de Código de Barras</h1>
-        <video id="video" autoplay></video>
-        <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
-        <canvas id="canvas" width="320" height="240"></canvas>
+        <h1>Leitor de Código de Barras (Câmera e Zebra)</h1>
+        <div id="interactive" class="viewport"></div>
+        <input type="text" id="barcode-result" placeholder="Código de Barras" readonly>
     </div>
 
-    <!-- Bibliotecas Externas -->
-    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
-
     <script>
-        const video = document.getElementById('video');
-        const barcodeValue = document.getElementById('barcode-value');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const barcodeResult = document.getElementById('barcode-result');
 
-        // Verificação de compatibilidade com ZXing
-        if (typeof ZXing === 'undefined') {
-            barcodeValue.value = "ZXing não está disponível. Verifique se a biblioteca foi carregada corretamente.";
-        } else {
-            let codeReader;
-            let animationId;
+        // Configuração do QuaggaJS
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#interactive'),
+                constraints: {
+                    width: 480,
+                    height: 320,
+                    facingMode: "environment"
+                },
+            },
+            decoder: {
+                readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+            },
+        }, function (err) {
+            if (err) {
+                console.error(err);
+                return
+            }
+            console.log("Inicialização completa.");
 
-            async function startBarcodeDetection() {
-                try {
-                    codeReader = new ZXing.BrowserMultiFormatReader();
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    video.srcObject = stream;
-
-                    video.onloadedmetadata = () => {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        requestAnimationFrame(decodeBarcode);
-                    };
-                } catch (err) {
-                    console.error('Erro ao acessar a câmera:', err);
-                    barcodeValue.value = "Permissão de acesso à câmera negada.";
-                }
+            // Definição do atributo willReadFrequently no canvas principal
+            const drawingCanvas = document.querySelector('#interactive canvas'); // Seleciona o canvas do Quagga
+            if (drawingCanvas) {
+                const drawingCtx = drawingCanvas.getContext('2d', { willReadFrequently: true });
+            } else {
+                console.error('Canvas do Quagga não encontrado.');
             }
 
-            function decodeBarcode() {
-                if (!codeReader) return;
+            Quagga.start();
+        });
 
-                codeReader.decodeFromVideoElement(video, canvas)
-                    .then(result => {
-                        if (result) {
-                            barcodeValue.value = result.text;
-                            drawResultPoints(result);
-                        } else {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Erro na leitura do código de barras:', err);
-                    })
-                    .finally(() => {
-                        animationId = requestAnimationFrame(decodeBarcode);
-                    });
+        // Leitura do código de barras pela câmera
+        Quagga.onDetected(function (result) {
+            barcodeResult.value = result.codeResult.code;
+        });
+
+        // Leitura do leitor Zebra (interface de teclado)
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') {
+                barcodeResult.value += event.key;
+            } else {
+                const barcodeData = barcodeResult.value;
+                console.log("Código de barras do leitor Zebra:", barcodeData);
+                barcodeResult.value = '';
             }
-
-            function drawResultPoints(result) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = 'red';
-                ctx.lineWidth = 2;
-                for (let i = 0; i < result.resultPoints.length; i++) {
-                    const point = result.resultPoints[i];
-                    ctx.beginPath();
-                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-                    ctx.stroke();
-                }
-            }
-
-            startBarcodeDetection();
-        }
+        });
 
     </script>
 </body>
