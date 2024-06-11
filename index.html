@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>QuaggaJS</title>
+    <title>Leitor de Código de Barras com QuaggaJS</title>
     <style>
         .container {
             display: flex;
@@ -41,66 +41,49 @@
     <script>
         const video = document.getElementById('video');
         const barcodeValue = document.getElementById('barcode-value');
-        let permissionRequested = false;
 
-        async function startScanner() {
-            if (!permissionRequested) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    video.srcObject = stream;
-                    permissionRequested = true;
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                video.srcObject = stream;
 
-                    Quagga.init({
-                        // inputStream removido aqui
-                        decoder: {
-                            readers: ["ean_reader", "code_128_reader", "code_39_reader", "ean_8_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
-                        }
-                    }, (err) => {
-                        if (err) {
-                            console.error("Erro ao iniciar o Quagga:", err);
-                            return;
-                        }
-                        Quagga.start();
-                    });
-
-                    Quagga.onDetected(result => {
-                        barcodeValue.value = result.codeResult.code;
-
-                        const drawingCtx = Quagga.canvas.ctx.overlay;
-                        const drawingCanvas = Quagga.canvas.dom.overlay;
-                        drawingCanvas.classList.add("drawingBuffer");
-                        drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                        if (result) {
-                            Quagga.ImageDebug.drawPath(result.boxes, { x: 0, y: 1 }, drawingCtx, { color: "red", lineWidth: 2 });
-                        }
-                    });
-
-                } catch (err) {
-                    console.error('Erro ao acessar a câmera:', err);
-                    if (err.name === 'NotAllowedError') {
-                        barcodeValue.value = "Permissão de acesso à câmera negada.";
-                    }
-                }
-            }
-        }
-
-        startScanner();
-
-        setInterval(() => {
-            if (permissionRequested) {
-                Quagga.decodeSingle({
-                    // inputStream removido aqui
-                    decoder: {
-                        readers: ["ean_reader", "code_128_reader", "code_39_reader", "ean_8_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: video
                     },
-                    target: video // Passa o elemento de vídeo diretamente
-                }, (result) => {
+                    decoder: {
+                        readers: ["ean_reader", "code_128_reader", "code_39_reader",
+                            "ean_8_reader", "code_39_vin_reader", "codabar_reader",
+                            "upc_reader", "upc_e_reader", "i2of5_reader", "2of5_reader", "code_93_reader"]
+                    }
+                }, (err) => {
+                    if (err) {
+                        console.error("Erro ao iniciar o Quagga:", err);
+                        return;
+                    }
+                    Quagga.start();
+                });
+
+                Quagga.onDetected(result => {
+                    barcodeValue.value = result.codeResult.code;
+
+                    // Desenhar caixa delimitadora (o Quagga fornece diretamente)
+                    const drawingCtx = Quagga.canvas.ctx.overlay;
+                    const drawingCanvas = Quagga.canvas.dom.overlay;
+                    drawingCanvas.classList.add("drawingBuffer"); // Classe CSS para estilo
+                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
                     if (result) {
-                        barcodeValue.value = result.codeResult.code;
+                        Quagga.ImageDebug.drawPath(result.boxes, { x: 0, y: 1 }, drawingCtx, { color: "red", lineWidth: 2 });
                     }
                 });
-            }
-        }, 1000); 
+            })
+            .catch(err => {
+                console.error('Erro ao acessar a câmera:', err);
+                if (err.name === 'NotAllowedError') {
+                    barcodeValue.value = "Permissão de acesso à câmera negada.";
+                }
+            });
     </script>
 </body>
 
