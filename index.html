@@ -49,7 +49,7 @@
         let barcodeDetector;
         let animationId;
 
-        if ('barcodeDetector' in window) {
+        if ('BarcodeDetector' in window) {
             barcodeDetector = new BarcodeDetector();
         } else {
             barcodeValue.value = "API BarcodeDetector não suportada neste navegador.";
