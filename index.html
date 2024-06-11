@@ -2,92 +2,66 @@
 <html>
 
 <head>
-    <title>Leitor de Código de Barras (Câmera e Zebra)</title>
-
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-    <style>
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #interactive.viewport {
-            /* Estilos para a área de visualização da câmera */
-            width: 480px;
-            height: 320px;
-            border: 2px solid #ccc;
-        }
-
-        input[type="text"] {
-            margin: 10px 0;
-            padding: 8px;
-            border: 1px solid #ccc;
-            width: 300px;
-        }
-    </style>
+    <title>Leitor de Código de Barras</title>
 </head>
 
 <body>
     <div class="container">
-        <h1>Leitor de Código de Barras (Câmera e Zebra)</h1>
-        <div id="interactive" class="viewport"></div>
-        <input type="text" id="barcode-result" placeholder="Código de Barras" readonly>
+        <h1>Leitor de Código de Barras</h1>
+        <video id="video" autoplay></video>
+        <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
     </div>
 
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+
     <script>
-        const barcodeResult = document.getElementById('barcode-result');
+        const video = document.getElementById('video');
+        const barcodeValue = document.getElementById('barcode-value');
+        let codeReader;
+        let isDetecting = false; // Flag para controlar a detecção
 
-        // Configuração do QuaggaJS
-        Quagga.init({
-            inputStream: {
-                name: "Live",
-                type: "LiveStream",
-                target: document.querySelector('#interactive'),
-                constraints: {
-                    width: 480,
-                    height: 320,
-                    facingMode: "environment"
-                },
-            },
-            decoder: {
-                readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "code_39_vin_reader", "codabar_reader", "upc_reader", "upc_e_reader", "i2of5_reader"]
-            },
-        }, function (err) {
-            if (err) {
-                console.error(err);
-                return
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(stream => {
+                video.srcObject = stream;
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                startDetection(); // Inicia a detecção quando o vídeo estiver pronto
+            })
+            .catch(err => handleCameraError(err));
+
+        async function startDetection() {
+            if (isDetecting) return; // Impede múltiplas detecções simultâneas
+            isDetecting = true;
+
+            try {
+                const result = await codeReader.decodeFromVideoDevice(null, 'video');
+                if (result) {
+                    barcodeValue.value = result.text;
+                    stopDetection(); // Para a detecção após um resultado válido
+                }
+            } catch (err) {
+                if (!(err instanceof ZXing.NotFoundException)) {
+                    console.error('Erro na detecção:', err);
+                    barcodeValue.value = "Erro na leitura";
+                }
+            } finally {
+                isDetecting = false;
+                setTimeout(startDetection, 500); // Reinicia a detecção após um intervalo (ajuste conforme necessário)
             }
-            console.log("Inicialização completa.");
+        }
 
-            // Definição do atributo willReadFrequently no canvas principal
-            const drawingCanvas = document.querySelector('#interactive canvas'); // Seleciona o canvas do Quagga
-            if (drawingCanvas) {
-                const drawingCtx = drawingCanvas.getContext('2d', { willReadFrequently: true });
+        function stopDetection() {
+            codeReader.reset(); // Limpa o leitor para evitar detecções indesejadas
+            isDetecting = false;
+        }
+
+        function handleCameraError(err) {
+            console.error('Erro ao acessar a câmera:', err);
+            if (err.name === 'NotAllowedError') {
+                barcodeValue.value = "Permissão negada para câmera.";
             } else {
-                console.error('Canvas do Quagga não encontrado.');
+                barcodeValue.value = "Erro ao acessar a câmera.";
             }
-
-            Quagga.start();
-        });
-
-        // Leitura do código de barras pela câmera
-        Quagga.onDetected(function (result) {
-            barcodeResult.value = result.codeResult.code;
-        });
-
-        // Leitura do leitor Zebra (interface de teclado)
-        document.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter') {
-                barcodeResult.value += event.key;
-            } else {
-                const barcodeData = barcodeResult.value;
-                console.log("Código de barras do leitor Zebra:", barcodeData);
-                barcodeResult.value = '';
-            }
-        });
-
+        }
     </script>
 </body>
 
