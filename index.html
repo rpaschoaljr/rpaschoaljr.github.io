@@ -46,57 +46,65 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        let codeReader;
-        let intervalId;
+        // Verificação de compatibilidade com ZXing
+        if (typeof ZXing === 'undefined') {
+            barcodeValue.value = "ZXing não está disponível. Verifique se a biblioteca foi carregada corretamente.";
+        } else {
+            let codeReader;
+            let animationId;
 
-        const ZXing = window.ZXing; // Certifique-se de que o ZXing está carregado
+            async function startBarcodeDetection() {
+                try {
+                    codeReader = new ZXing.BrowserMultiFormatReader();
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    video.srcObject = stream;
 
-        codeReader = new ZXing.BrowserMultiFormatReader();
-
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    decodeBarcode();
-                };
-            })
-            .catch(err => {
-                console.error('Erro:', err);
-                barcodeValue.value = "Erro ao acessar a câmera.";
-            });
-
-        function decodeBarcode() {
-            if (!codeReader) return;
-
-            codeReader.decodeFromVideoElement(video, canvas)
-                .then(result => {
-                    if (result) {
-                        barcodeValue.value = result.text;
-                        // Desenhar retângulo ao redor do código de barras (opcional)
-                        drawResultPoints(result);
-                    }
-                })
-                .catch(err => {
-                    console.error('Erro na leitura do código de barras:', err);
-                })
-                .finally(() => {
-                    intervalId = setTimeout(decodeBarcode, 500); // Executar a cada 500ms
-                });
-        }
-
-        function drawResultPoints(result) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth = 2;
-            for (let i = 0; i < result.resultPoints.length; i++) {
-                const point = result.resultPoints[i];
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-                ctx.stroke();
+                    video.onloadedmetadata = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        requestAnimationFrame(decodeBarcode);
+                    };
+                } catch (err) {
+                    console.error('Erro ao acessar a câmera:', err);
+                    barcodeValue.value = "Permissão de acesso à câmera negada.";
+                }
             }
+
+            function decodeBarcode() {
+                if (!codeReader) return;
+
+                codeReader.decodeFromVideoElement(video, canvas)
+                    .then(result => {
+                        if (result) {
+                            barcodeValue.value = result.text;
+                            drawResultPoints(result);
+                        } else {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erro na leitura do código de barras:', err);
+                    })
+                    .finally(() => {
+                        animationId = requestAnimationFrame(decodeBarcode);
+                    });
+            }
+
+            function drawResultPoints(result) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < result.resultPoints.length; i++) {
+                    const point = result.resultPoints[i];
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            startBarcodeDetection();
         }
+
     </script>
 </body>
 
