@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Leitor de Código de Barras com QuaggaJS</title>
+    <title>zxing</title>
     <style>
         .container {
             display: flex;
@@ -22,7 +22,7 @@
             border: 1px solid #ccc;
         }
 
-        .drawingBuffer {
+        .barcode-highlight {
             position: absolute;
             border: 2px solid red;
         }
@@ -34,49 +34,48 @@
         <h1>Leitor de Código de Barras</h1>
         <video id="video" autoplay></video>
         <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
+        <canvas id="canvas" width="320" height="240"></canvas>
     </div>
 
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
 
     <script>
         const video = document.getElementById('video');
         const barcodeValue = document.getElementById('barcode-value');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let codeReader;
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(stream => {
                 video.srcObject = stream;
 
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: video
-                    },
-                    decoder: {
-                        readers: ["ean_reader", "code_128_reader", "code_39_reader",
-                            "ean_8_reader", "code_39_vin_reader", "codabar_reader",
-                            "upc_reader", "upc_e_reader", "i2of5_reader", "2of5_reader", "code_93_reader"]
-                    }
-                }, (err) => {
-                    if (err) {
-                        console.error("Erro ao iniciar o Quagga:", err);
-                        return;
-                    }
-                    Quagga.start();
-                });
+                codeReader = new ZXing.BrowserMultiFormatReader();
 
-                Quagga.onDetected(result => {
-                    barcodeValue.value = result.codeResult.code;
+                function detectBarcode() {
+                    codeReader.decodeFromVideoElement(video, canvas)
+                        .then(result => {
+                            if (result) {
+                                barcodeValue.value = result.text;
+                            } else {
+                                barcodeValue.value = "";
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erro na leitura:', err);
+                            barcodeValue.value = "Erro na leitura do código de barras";
+                        })
+                        .finally(() => {
+                            requestAnimationFrame(detectBarcode);
+                        });
+                }
 
-                    // Desenhar caixa delimitadora (o Quagga fornece diretamente)
-                    const drawingCtx = Quagga.canvas.ctx.overlay;
-                    const drawingCanvas = Quagga.canvas.dom.overlay;
-                    drawingCanvas.classList.add("drawingBuffer"); // Classe CSS para estilo
-                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
-                    if (result) {
-                        Quagga.ImageDebug.drawPath(result.boxes, { x: 0, y: 1 }, drawingCtx, { color: "red", lineWidth: 2 });
-                    }
-                });
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    detectBarcode();
+                };
             })
             .catch(err => {
                 console.error('Erro ao acessar a câmera:', err);
