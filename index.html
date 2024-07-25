@@ -1,22 +1,121 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
-    <title>zxing</title>
+    <meta charset="utf-8">
+    <title>Leitor codigo de barras</title>
     <style>
-        .container {
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #000000c7;
+            color: #ffffff;
+            height: 90vh;
+            display: flex;
+            position: relative;
+        }
+
+        #conteiner {
+            margin: 20px;
+            padding: 100px;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
+            justify-content: space-around;
             align-items: center;
         }
 
-        video {
+        #containerElements,
+        #containerElementsHour {
+            width: 100%;
+            height: calc(100% / 6);
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .inputFieldOP,
+        .inputFieldTime {
+            padding: 10px;
+            text-align: center;
+            height: 50px;
+            background-color: #00000040;
+            color: #ffffff;
+            margin: 0 10px;
+            font-size: 24px;
+        }
+
+        .inputFieldOP {
+            width: 500px;
+        }
+
+        .inputFieldTime {
+            width: 50px;
+        }
+
+        .textPage {
+            margin: 10px;
+            padding: 10px 16px;
+            font-size: 24px;
+            padding: 10px;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        .button {
+            margin: 20px;
+            padding: 10px 16px;
+            background-color: #007bff;
+            color: white;
+            height: 50px;
+            width: 90px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .button:active {
+            background-color: #003489;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1;
+        }
+
+        .containerLeitor {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .containerLeitor video {
             width: 320px;
             height: 240px;
             border: 2px solid #ccc;
         }
 
-        #barcode-value {
+        .containerLeitor #barcode-value {
             margin-top: 10px;
             padding: 8px;
             border: 1px solid #ccc;
@@ -26,63 +125,238 @@
             position: absolute;
             border: 2px solid red;
         }
+
+        .containerLeitor canvas {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Leitor de Código de Barras</h1>
+    <div id="conteiner">
+
+        <div id="containerElements">
+            <label for="inputOP" class="textPage">Ordem de Produção:</label>
+            <input class="inputFieldOP" id="inputOP" type="number" min="0" placeholder="OP" readonly>
+            <button class="button" onclick="mostrarLeitor()">Ler</button>
+            <button class="button" id="botaoOK">OK</button>
+        </div>
+        <div id="containerElements">
+            <label for="inputDescription" class="textPage">Descrição:</label>
+            <input class="inputFieldOP" id="inputDescription" type="number" min="0" placeholder="Descrição do produto"
+                readonly>
+        </div>
+        <div id="containerElementsHour">
+            <label for="inputTempoPeca" class="textPage">Tempo por Peça (min):</label>
+            <input class="inputFieldTime" id="inputTempoPecaHora" type="number" min="0" placeholder="">
+            <label for="inputTempoPeca" class="textPage">:</label>
+            <input class="inputFieldTime" id="inputTempoPecaMin" type="number" min="0" placeholder="">
+        </div>
+        <div id="containerElements">
+            <label for="inputQntPecas" class="textPage">Quantidade de Peças:</label>
+            <input class="inputFieldOP" id="inputQntPecas" type="number" min="0" placeholder="0" readonly>
+        </div>
+        <div id="containerElementsHour">
+            <label for="inputTempoEstimado" class="textPage">Tempo Estimado:</label>
+            <input class="inputFieldTime" id="inputTempoHora" type="number" min="0" placeholder="" readonly>
+            <label for="inputTempoEstimado" class="textPage">:</label>
+            <input class="inputFieldTime" id="inputTempoMin" type="number" min="0" placeholder="" readonly>
+        </div>
+        <div id="containerElementsHour">
+            <label for="inputHoraInicial" class="textPage">Hora Inicial:</label>
+            <input class="inputFieldTime" id="inputHoraInicialHora" type="number" min="0" placeholder="" readonly>
+            <label for="inputHoraInicial" class="textPage">:</label>
+            <input class="inputFieldTime" id="inputHoraInicialMin" type="number" min="0" placeholder="" readonly>
+            <button class="button" onclick="marcarHoraInicial()">Marcar</button>
+        </div>
+        <div id="containerElementsHour">
+            <label for="inputHoraFinal" class="textPage">Hora Final:</label>
+            <input class="inputFieldTime" id="inputHoraFinalHora" type="number" min="0" placeholder="" readonly>
+            <label for="inputHoraFinal" class="textPage">:</label>
+            <input class="inputFieldTime" id="inputHoraFinalMin" type="number" min="0" placeholder="" readonly>
+            <button class="button" onclick="marcarHoraFinal()">Marcar</button>
+        </div>
+        <div id="containerElementsHour">
+            <label for="Duração" class="textPage">Duração:</label>
+            <input class="inputFieldTime" id="DuraçãoHora" type="number" min="0" placeholder="" readonly>
+            <label for="Duração" class="textPage">:</label>
+            <input class="inputFieldTime" id="DuraçãoMin" type="number" min="0" placeholder="" readonly>
+        </div>
+    </div>
+    <div id="overlay" class="overlay"></div>
+    <div id="containerLeitor" class="containerLeitor">
         <video id="video" autoplay></video>
         <input type="text" id="barcode-value" placeholder="Valor do Código de Barras">
         <canvas id="canvas" width="320" height="240"></canvas>
+        <button class="button" onclick="esconderLeitor()">Fechar</button>
     </div>
 
     <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+        integrity="sha512-r22WHq5wNQcbd2/Emr/5Sh83t6dDeKIF2d7/tXgKKxfLxjJs9QzFhTJK/mHE63JLhZkQax3lE6LXCjNHXpCp8Vw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+
 
     <script>
-        const video = document.getElementById('video');
-        const barcodeValue = document.getElementById('barcode-value');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
 
-        let codeReader;
+        async function buscarInformacoesProduto() {
+            const op = document.getElementById('inputOP').value;
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(stream => {
-                video.srcObject = stream;
+            if (!op) {
+                alert("Por favor, insira um número de ordem de produção (OP).");
+                return;
+            }
 
-                codeReader = new ZXing.BrowserMultiFormatReader();
+            try {
+                // Caminho para o arquivo (assumindo que está na mesma pasta)
+                const filePath = 'Dados.xlsx';
 
-                function detectBarcode() {
-                    codeReader.decodeFromVideoElement(video, canvas)
-                        .then(result => {
-                            if (result) {
-                                barcodeValue.value = result.text;
-                            } else {
-                                barcodeValue.value = "";
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Erro na leitura:', err);
-                            barcodeValue.value = "Erro na leitura do código de barras";
-                        })
-                        .finally(() => {
-                            requestAnimationFrame(detectBarcode);
-                        });
+                // Ler o arquivo diretamente
+                const data = await fetch(filePath)
+                    .then(response => response.arrayBuffer());
+
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                for (let cell in worksheet) {
+                    if (cell.startsWith('A')) {
+                        const cellValue = worksheet[cell].v;
+                        if (cellValue === op) {
+                            document.getElementById('inputDescription').value = worksheet[`B${cell.slice(1)}`].v;
+                            document.getElementById('inputQntPecas').value = worksheet[`C${cell.slice(1)}`].v;
+                            return;
+                        }
+                    }
                 }
 
-                video.onloadedmetadata = () => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    detectBarcode();
-                };
-            })
-            .catch(err => {
-                console.error('Erro ao acessar a câmera:', err);
-                if (err.name === 'NotAllowedError') {
-                    barcodeValue.value = "Permissão de acesso à câmera negada.";
+                alert("Ordem de produção não encontrada.");
+            } catch (error) {
+                console.error("Erro ao buscar informações:", error);
+
+                // Tratar o caso em que o arquivo não é encontrado
+                if (error.message.includes('Failed to fetch')) {
+                    alert("O arquivo 'Dados.xlsx' não foi encontrado.");
+                } else {
+                    alert("Ocorreu um erro ao buscar informações do produto.");
                 }
-            });
+            }
+        }
+
+        const botaoOK = document.getElementById('botaoOK');
+        botaoOK.addEventListener('click', buscarInformacoesProduto);
+
+        function calcularTempoEstimado() {
+            const tempoPorPecaHora = parseInt(document.getElementById("inputTempoPecaHora").value, 10) || 0;
+            const tempoPorPecaMin = parseInt(document.getElementById("inputTempoPecaMin").value, 10) || 0;
+            const quantidadePecas = parseInt(document.getElementById("inputQntPecas").value, 10) || 0;
+
+            const tempoTotalMinutos = (tempoPorPecaHora * 60 + tempoPorPecaMin) * quantidadePecas;
+            const horasEstimadas = Math.floor(tempoTotalMinutos / 60);
+            const minutosEstimados = tempoTotalMinutos % 60;
+
+            document.getElementById("inputTempoHora").value = horasEstimadas;
+            document.getElementById("inputTempoMin").value = minutosEstimados;
+        }
+
+        function marcarHoraInicial() {
+            const agora = new Date();
+            const horas = agora.getHours();
+            const minutos = agora.getMinutes();
+
+            document.getElementById("inputHoraInicialHora").value = horas;
+            document.getElementById("inputHoraInicialMin").value = minutos;
+
+
+        }
+
+        function marcarHoraFinal() {
+            const agora = new Date();
+            const horas = agora.getHours();
+            const minutos = agora.getMinutes();
+
+            document.getElementById("inputHoraFinalHora").value = horas;
+            document.getElementById("inputHoraFinalMin").value = minutos;
+
+            calcularDuracao(); // Atualiza a duração após marcar a hora final
+        }
+
+        function calcularDuracao() {
+            const horaInicial = parseInt(document.getElementById("inputHoraInicialHora").value, 10) || 0;
+            const minutoInicial = parseInt(document.getElementById("inputHoraInicialMin").value, 10) || 0;
+            const horaFinal = parseInt(document.getElementById("inputHoraFinalHora").value, 10) || 0;
+            const minutoFinal = parseInt(document.getElementById("inputHoraFinalMin").value, 10) || 0;
+
+            let diferencaHoras = horaFinal - horaInicial;
+            let diferencaMinutos = minutoFinal - minutoInicial;
+
+            // Ajustar para casos em que a hora final é menor que a inicial
+            if (diferencaMinutos < 0) {
+                diferencaHoras--;
+                diferencaMinutos += 60;
+            }
+
+            document.getElementById("DuraçãoHora").value = diferencaHoras;
+            document.getElementById("DuraçãoMin").value = diferencaMinutos;
+        }
+        function mostrarLeitor() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('containerLeitor').style.display = 'flex';
+            Leitor();
+        }
+
+        function esconderLeitor() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('containerLeitor').style.display = 'none';
+        }
+
+        function Leitor() {
+            const video = document.getElementById('video');
+            const barcodeValue = document.getElementById('barcode-value');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let codeReader;
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => {
+                    video.srcObject = stream;
+
+                    codeReader = new ZXing.BrowserMultiFormatReader();
+
+                    function detectBarcode() {
+                        codeReader.decodeFromVideoElement(video, canvas)
+                            .then(result => {
+                                if (result) {
+                                    barcodeValue.value = result.text;
+                                    document.getElementById('inputOP').value = result.text; // Preenche o campo "Ordem de Produção"
+                                    esconderLeitor();
+                                } else {
+                                    barcodeValue.value = "";
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Erro na leitura:', err);
+                                barcodeValue.value = "Erro na leitura do código de barras";
+                            })
+                            .finally(() => {
+                                requestAnimationFrame(detectBarcode);
+                            });
+                    }
+
+                    video.onloadedmetadata = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        detectBarcode();
+                    };
+                })
+                .catch(err => {
+                    console.error('Erro ao acessar a câmera:', err);
+                    if (err.name === 'NotAllowedError') {
+                        barcodeValue.value = "Permissão de acesso à câmera negada.";
+                    }
+                });;
+        }
     </script>
 </body>
 
