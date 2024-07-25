@@ -143,8 +143,7 @@
         </div>
         <div id="containerElements">
             <label for="inputDescription" class="textPage">Descrição:</label>
-            <input class="inputFieldOP" id="inputDescription" type="number" min="0" placeholder="Descrição do produto"
-                readonly>
+            <input class="inputFieldOP" id="inputDescription" placeholder="Descrição do produto" readonly>
         </div>
         <div id="containerElementsHour">
             <label for="inputTempoPeca" class="textPage">Tempo por Peça (min):</label>
@@ -217,8 +216,8 @@
                 const produtoEncontrado = jsonData.find(item => item[0] === op);
 
                 if (produtoEncontrado) {
-                    document.getElementById('inputDescription').value = produtoEncontrado[1];
-                    document.getElementById('inputQntPecas').value = produtoEncontrado[2];
+                    document.getElementById('inputDescription').value = produtoEncontrado[2];
+                    document.getElementById('inputQntPecas').value = produtoEncontrado[3];
                 } else {
                     alert("Ordem de produção não encontrada.");
                 }
