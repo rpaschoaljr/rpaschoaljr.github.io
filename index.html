@@ -137,7 +137,7 @@
 
         <div id="containerElements">
             <label for="inputOP" class="textPage">Ordem de Produção:</label>
-            <input class="inputFieldOP" id="inputOP" type="number" min="0" placeholder="OP" readonly>
+            <input class="inputFieldOP" id="inputOP" type="number" min="0" placeholder="OP" >
             <button class="button" onclick="mostrarLeitor()">Ler</button>
             <button class="button" id="botaoOK">OK</button>
         </div>
@@ -239,8 +239,9 @@
                 if (error.message.includes('Failed to fetch')) {
                     alert("O arquivo 'Dados.xlsx' não foi encontrado.");
                 } else {
-                    console.log(filePath, "catch")
+                    
                     alert("Ocorreu um erro ao buscar informações do produto.");
+                    console.log("catch", filePath);
                 }
             }
         }
