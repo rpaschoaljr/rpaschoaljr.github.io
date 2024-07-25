@@ -207,10 +207,11 @@
                 return;
             }
 
-            try {
+ try {
                 // Caminho para o arquivo (assumindo que está na mesma pasta)
+                console.log("veio aqui")
                 const filePath = 'Dados.xlsx';
-
+                console.log(filePath)
                 // Ler o arquivo diretamente
                 const data = await fetch(filePath)
                     .then(response => response.arrayBuffer());
@@ -238,6 +239,7 @@
                 if (error.message.includes('Failed to fetch')) {
                     alert("O arquivo 'Dados.xlsx' não foi encontrado.");
                 } else {
+                    console.log(filePath, "catch")
                     alert("Ocorreu um erro ao buscar informações do produto.");
                 }
             }
