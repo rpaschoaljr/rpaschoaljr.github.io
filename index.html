@@ -137,7 +137,7 @@
 
         <div id="containerElements">
             <label for="inputOP" class="textPage">Ordem de Produção:</label>
-            <input class="inputFieldOP" id="inputOP" type="number" min="0" placeholder="OP" >
+            <input class="inputFieldOP" id="inputOP" type="number" min="0" placeholder="OP">
             <button class="button" onclick="mostrarLeitor()">Ler</button>
             <button class="button" id="botaoOK">OK</button>
         </div>
@@ -199,52 +199,40 @@
     <script>
 
         async function buscarInformacoesProduto() {
-            const op = document.getElementById('inputOP').value;
+            const op = Number(document.getElementById('inputOP').value);
 
             if (!op) {
                 alert("Por favor, insira um número de ordem de produção (OP).");
                 return;
             }
 
- try {
-                // Caminho para o arquivo (assumindo que está na mesma pasta)
-                console.log("veio aqui")
-                const filePath = 'Dados.xlsx';
-                console.log(filePath)
-                // Ler o arquivo diretamente
-                const data = await fetch(filePath)
-                    .then(response => response.arrayBuffer());
-
+            try {
+                const filePath = 'Dados.xlsx'; // Ou obtenha o caminho do arquivo do servidor
+                const data = await fetch(filePath).then(response => response.arrayBuffer());
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],
+                    { header: 1 }); // Começar na linha 2
 
-                for (let cell in worksheet) {
-                    if (cell.startsWith('A')) {
-                        const cellValue = worksheet[cell].v;
-                        if (cellValue === op) {
-                            document.getElementById('inputDescription').value = worksheet[`B${cell.slice(1)}`].v;
-                            document.getElementById('inputQntPecas').value = worksheet[`C${cell.slice(1)}`].v;
-                            return;
-                        }
-                    }
+                const produtoEncontrado = jsonData.find(item => item[0] === op);
+
+                if (produtoEncontrado) {
+                    document.getElementById('inputDescription').value = produtoEncontrado[1];
+                    document.getElementById('inputQntPecas').value = produtoEncontrado[2];
+                } else {
+                    alert("Ordem de produção não encontrada.");
                 }
-
-                alert("Ordem de produção não encontrada.");
             } catch (error) {
                 console.error("Erro ao buscar informações:", error);
-
-                // Tratar o caso em que o arquivo não é encontrado
                 if (error.message.includes('Failed to fetch')) {
-                    alert("O arquivo 'Dados.xlsx' não foi encontrado.");
+                    alert("Erro de comunicação com o servidor. Verifique sua conexão.");
+                } else if (error.message.includes('Not Found')) {
+                    alert("Arquivo não encontrado no servidor.");
                 } else {
-                    console.log(worksheet[`B${cell.slice(1)}`].v)
-                    console.log(filePath, "catch")
                     alert("Ocorreu um erro ao buscar informações do produto.");
                 }
             }
         }
-
         const botaoOK = document.getElementById('botaoOK');
         botaoOK.addEventListener('click', buscarInformacoesProduto);
 
