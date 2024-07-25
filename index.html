@@ -218,6 +218,13 @@
                 if (produtoEncontrado) {
                     document.getElementById('inputDescription').value = produtoEncontrado[2];
                     document.getElementById('inputQntPecas').value = produtoEncontrado[3];
+                    const tempoPorPecaExcel = produtoEncontrado[4]; // Coluna E é índice 4
+                    const tempoPorPecaMinutos = Math.round(tempoPorPecaExcel * 24 * 60); // Converter para minutos
+                    const horas = Math.floor(tempoPorPecaMinutos / 60);
+                    const minutos = tempoPorPecaMinutos % 60;
+
+                    document.getElementById('inputTempoPecaHora').value = horas;
+                    document.getElementById('inputTempoPecaMin').value = minutos;
                 } else {
                     alert("Ordem de produção não encontrada.");
                 }
