@@ -225,6 +225,7 @@
 
                     document.getElementById('inputTempoPecaHora').value = horas;
                     document.getElementById('inputTempoPecaMin').value = minutos;
+                    calcularTempoEstimado()
                 } else {
                     alert("Ordem de produção não encontrada.");
                 }
@@ -239,7 +240,7 @@
                 }
             }
         }
-        calcularTempoEstimado()
+        
         const botaoOK = document.getElementById('botaoOK');
         botaoOK.addEventListener('click', buscarInformacoesProduto);
 
