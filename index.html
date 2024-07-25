@@ -239,9 +239,9 @@
                 if (error.message.includes('Failed to fetch')) {
                     alert("O arquivo 'Dados.xlsx' não foi encontrado.");
                 } else {
-                    
+                    console.log(worksheet[`B${cell.slice(1)}`].v)
+                    console.log(filePath, "catch")
                     alert("Ocorreu um erro ao buscar informações do produto.");
-                    console.log("catch", filePath);
                 }
             }
         }
