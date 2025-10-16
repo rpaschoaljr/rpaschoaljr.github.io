@@ -1,0 +1,21 @@
+/* css/style.css */
+
+/* Importa a fonte futurista do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+/* Estilos aplicados ao corpo da página */
+body {
+    font-family: 'Orbitron', sans-serif;
+    background-color: #0a0a1a;
+   
+}
+
+/* Classe para o efeito de brilho (glow) neon azul */
+.text-glow-blue {
+    text-shadow: 0 0 5px #007BFF, 0 0 10px #007BFF, 0 0 15px #007BFF;
+}
+
+/* Classe para o efeito de brilho (glow) neon roxo */
+.text-glow-purple {
+    text-shadow: 0 0 5px #8A2BE2, 0 0 10px #8A2BE2, 0 0 15px #8A2BE2;
+}
