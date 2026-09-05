@@ -1,0 +1,163 @@
+<div id="app">
+  <!-- Novo Seletor de Idioma Lado a Lado -->
+  <div class="lang-selector">
+    <div class="lang-pill">
+      <button (click)="ts.setLanguage('pt')" [class.active]="ts.currentLang() === 'pt'" class="lang-item">
+        <span class="flag">🇧🇷</span> PT
+      </button>
+      <button (click)="ts.setLanguage('en')" [class.active]="ts.currentLang() === 'en'" class="lang-item">
+        <span class="flag">🇺🇸</span> EN
+      </button>
+      <button (click)="ts.setLanguage('es')" [class.active]="ts.currentLang() === 'es'" class="lang-item">
+        <span class="flag">🇪🇸</span> ES
+      </button>
+    </div>
+  </div>
+
+  <header id="apresentacao" class="header-height flex flex-col justify-center items-center text-center p-8">
+    <h1 class="animate-pulse title">Ricardo Paschoal Junior</h1>
+    <p id="subtitulo" class="subtitle">{{ ts.translate('subtitle') }}</p>
+    
+    @if (ts.currentLang() !== 'pt') {
+      <p class="text-yellow-400 mt-4 max-w-md mx-auto text-sm bg-yellow-900 bg-opacity-20 p-2 rounded border border-yellow-500">
+        ⚠️ {{ ts.translate('translation_warning') }}
+      </p>
+    }
+
+    <div class="flex space-x-6 mt-8">
+      <a href="https://github.com/rpaschoaljr" target="_blank" class="social-link">[GitHub]</a>
+      <a href="https://www.linkedin.com/in/ricardo-paschoal-junior-7857891b5/" target="_blank" class="social-link">[LinkedIn]</a>
+      <a href="mailto:r.paschoal@hotmail.com" class="social-link">[E-mail]</a>
+    </div>
+
+  </header>
+
+  <section id="resumo" class="container mx-auto p-8" data-aos="fade-up">
+    <h2 class="section-title">{{ ts.translate('about_title') }}</h2>
+    <p class="max-w-4xl mx-auto text-center text-lg text-gray-300">
+      {{ ts.translate('about_text') }}
+    </p>
+  </section>
+
+  <section id="sobre" class="container mx-auto p-8" data-aos="fade-up">
+    <h2 class="section-title">{{ ts.translate('objective_title') }}</h2>
+    <p class="max-w-3xl mx-auto text-center text-lg">
+      {{ ts.translate('objective_text') }}
+    </p>
+  </section>
+
+  <section id="experiencia" class="container mx-auto p-8" data-aos="fade-up">
+    <h2 class="section-title">{{ ts.translate('exp_title') }}</h2>
+    <div class="max-w-3xl mx-auto card purple-border">
+      <h3 class="text-2xl font-bold">{{ ts.translate('exp_role') }}</h3>
+      <p class="text-purple-400"><em>{{ ts.translate('exp_period') }}</em></p>
+      <ul class="list-disc list-inside mt-4 space-y-2">
+        <li>{{ ts.translate('exp_item1') }}</li>
+        <li>{{ ts.translate('exp_item2') }}</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="formacao" class="container mx-auto p-8" data-aos="fade-up">
+    <h2 class="section-title">{{ ts.translate('edu_title') }}</h2>
+    <div class="max-w-3xl mx-auto space-y-6">
+      <div class="card blue-border">
+        <h3 class="text-2xl font-bold">{{ ts.translate('edu_course1') }}</h3>
+        <p class="text-blue-300">{{ ts.translate('edu_school1') }}</p>
+        <p class="text-gray-400 mt-1"><em>{{ ts.translate('edu_date1') }}</em></p>
+      </div>
+      <div class="card blue-border">
+        <h3 class="text-2xl font-bold">{{ ts.translate('edu_course2') }}</h3>
+        <p class="text-blue-300">{{ ts.translate('edu_school2') }}</p>
+        <p class="text-gray-400 mt-1"><em>{{ ts.translate('edu_date2') }}</em></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="projetos" class="container mx-auto p-8">
+    <h2 class="section-title">{{ ts.translate('proj_title') }}</h2>
+    <div class="text-center mb-8">
+      <button (click)="loadProjects()" class="btn btn-purple" [disabled]="loadingProjects()">
+        {{ ts.translate('proj_btn') }}
+      </button>
+    </div>
+    
+    <div id="lista-projetos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      @if (loadingProjects()) {
+        <p class="col-span-full text-center text-gray-400">{{ ts.translate('proj_loading') }}</p>
+      } @else if (projects().length === 0) {
+        <p class="col-span-full text-center text-gray-400">{{ ts.translate('proj_empty') }}</p>
+      }
+
+      @for (project of projects(); track project.nome) {
+        <div class="card purple-border flex flex-col h-full" data-aos="fade-up">
+          <h3 class="text-2xl font-bold text-purple-400">{{ project.nome }}</h3>
+          <p *ngIf="project.resumo" class="text-gray-300 mt-2 flex-grow">{{ project.resumo }}</p>
+          <a [href]="project.link" target="_blank" class="link-blue mt-4 self-start">
+            {{ ts.translate('proj_view') }} &rarr;
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section id="certificacoes" class="container mx-auto p-8">
+    <h2 class="section-title">{{ ts.translate('cert_title') }}</h2>
+    <div class="text-center mb-8">
+      <button (click)="loadCertifications()" class="btn btn-blue" [disabled]="loadingCertifications()">
+        {{ ts.translate('cert_btn') }}
+      </button>
+    </div>
+
+    <div id="lista-certificacoes" class="flex flex-col items-center">
+      @if (loadingCertifications()) {
+        <p class="text-center text-gray-400">{{ ts.translate('proj_loading') }}</p>
+      } @else if (certifications().length === 0) {
+        <p class="text-center text-gray-400">{{ ts.translate('cert_empty') }}</p>
+      }
+
+      @for (cert of certifications(); track cert.nome) {
+        <div class="card blue-border w-full max-w-3xl text-center mb-4" data-aos="fade-left">
+          <a [href]="cert.link" target="_blank" class="cert-link">{{ cert.nome }}</a>
+          <div *ngIf="cert.projetos.length > 0" class="mt-4 pt-3 border-top flex flex-wrap justify-center gap-3">
+            @for (proj of cert.projetos; track proj; let i = $index) {
+              <a [href]="proj" target="_blank" class="badge">
+                {{ ts.translate('proj_view') }} {{ i + 1 }}
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section id="competencias" class="container mx-auto p-8" data-aos="fade-up">
+    <h2 class="section-title">{{ ts.translate('skills_title') }}</h2>
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="mb-6">
+        <h3 class="text-2xl text-purple-400 mb-2">{{ ts.translate('skills_lang') }}</h3>
+        <p>JavaScript, HTML, CSS, Python, C, Node.js</p>
+      </div>
+      <div class="mb-6">
+        <h3 class="text-2xl text-purple-400 mb-2">{{ ts.translate('skills_tools') }}</h3>
+        <p>Git, GitHub, VS Code, Linux, Google Cloud Platform</p>
+      </div>
+      <div>
+        <h3 class="text-2xl text-purple-400 mb-2">{{ ts.translate('skills_soft') }}</h3>
+        <p>{{ ts.translate('skills_soft_text') }}</p>
+      </div>
+    </div>
+  </section>
+
+  <footer id="contato" class="text-center p-8 mt-16 border-top">
+    <p>{{ ts.translate('footer_contact') }}: (16) 99774-5122 | r.paschoal@hotmail.com</p>
+    <p class="mt-2">&copy; 2026 - Ricardo Paschoal Junior</p>
+  </footer>
+
+  <!-- Seta flutuante (Fixed) -->
+  <div class="floating-arrow" [class.rotate-up]="isAtBottom()" (click)="scrollToNext()">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+    </svg>
+  </div>
+</div>
